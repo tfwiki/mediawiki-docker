@@ -13,7 +13,7 @@ sleep $MEDIAWIKI_SLEEP
 : ${MEDIAWIKI_ADMIN_USER:=admin}
 : ${MEDIAWIKI_ADMIN_PASS:=rosebud}
 : ${MEDIAWIKI_DB_TYPE:=mysql}
-
+: ${MEDIAWIKI_DB_SCHEMA:=mediawiki}
 : ${MEDIAWIKI_ENABLE_SSL:=false}
 : ${MEDIAWIKI_UPDATE:=false}
 
@@ -25,8 +25,8 @@ if [ -z "$MEDIAWIKI_DB_HOST" ]; then
 		MEDIAWIKI_DB_HOST=$POSTGRES_PORT_5432_TCP_ADDR
 	elif [ -n "$DB_PORT_3306_TCP_ADDR" ]; then
 		MEDIAWIKI_DB_HOST=$DB_PORT_3306_TCP_ADDR
-  elif [ -n "$DB_PORT_5432_TCP_ADDR" ]; then
-    MEDIAWIKI_DB_TYPE=postgres
+	elif [ -n "$DB_PORT_5432_TCP_ADDR" ]; then
+		MEDIAWIKI_DB_TYPE=postgres
 		MEDIAWIKI_DB_HOST=$DB_PORT_5432_TCP_ADDR
 	else
 		echo >&2 'error: missing MEDIAWIKI_DB_HOST environment variable'
@@ -55,8 +55,8 @@ if [ -z "$MEDIAWIKI_DB_PASSWORD" ]; then
 		MEDIAWIKI_DB_PASSWORD=$POSTGRES_ENV_POSTGRES_PASSWORD
 	elif [ -n "$DB_ENV_MYSQL_ROOT_PASSWORD" ]; then
 		MEDIAWIKI_DB_PASSWORD=$DB_ENV_MYSQL_ROOT_PASSWORD
-  elif [ -n "$DB_ENV_POSTGRES_PASSWORD" ]; then
-    MEDIAWIKI_DB_PASSWORD=$DB_ENV_POSTGRES_PASSWORD
+	elif [ -n "$DB_ENV_POSTGRES_PASSWORD" ]; then
+		MEDIAWIKI_DB_PASSWORD=$DB_ENV_POSTGRES_PASSWORD
 	else
 		echo >&2 'error: missing required MEDIAWIKI_DB_PASSWORD environment variable'
 		echo >&2 '	Did you forget to -e MEDIAWIKI_DB_PASSWORD=... ?'
@@ -75,8 +75,8 @@ if [ -z "$MEDIAWIKI_DB_PORT" ]; then
 		MEDIAWIKI_DB_PORT=$POSTGRES_PORT_5432_TCP_PORT
 	elif [ -n "$DB_PORT_3306_TCP_PORT" ]; then
 		MEDIAWIKI_DB_PORT=$DB_PORT_3306_TCP_PORT
-  elif [ -n "$DB_PORT_5432_TCP_PORT" ]; then
-    MEDIAWIKI_DB_PORT=$DB_PORT_5432_TCP_PORT
+	elif [ -n "$DB_PORT_5432_TCP_PORT" ]; then
+		MEDIAWIKI_DB_PORT=$DB_PORT_5432_TCP_PORT
 	elif [ "$MEDIAWIKI_DB_TYPE" = "mysql" ]; then
 		MEDIAWIKI_DB_PORT="3306"
 	elif [ "$MEDIAWIKI_DB_TYPE" = "postgres" ]; then
@@ -183,6 +183,7 @@ if [ ! -e "LocalSettings.php" -a ! -z "$MEDIAWIKI_SITE_SERVER" ]; then
 	php maintenance/install.php \
 		--confpath /var/www/html \
 		--dbname "$MEDIAWIKI_DB_NAME" \
+		--dbschema "$MEDIAWIKI_DB_SCHEMA" \
 		--dbport "$MEDIAWIKI_DB_PORT" \
 		--dbserver "$MEDIAWIKI_DB_HOST" \
 		--dbtype "$MEDIAWIKI_DB_TYPE" \
@@ -230,6 +231,10 @@ if [ -e "LocalSettings.php" -a $MEDIAWIKI_UPDATE = true ]; then
 	php maintenance/update.php --quick
 fi
 
+# Ensure images folder exists
+mkdir -p images
+
+# Fix file ownership and permissions
 chown -R www-data: .
 chmod 755 images
 
